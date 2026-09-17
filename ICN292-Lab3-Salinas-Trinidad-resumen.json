@@ -1,0 +1,241 @@
+{
+  "name": "ICN292-Lab3-Salinas-Trinidad-resumen",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 18
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d257d4ca-74fd-4e4a-925c-e3f3fd549f96",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "LjDduW6kh8iik4o7",
+          "mode": "list",
+          "cachedResultName": "registro_solicitudes",
+          "cachedResultUrl": "/projects/bjKI32klJ6jq0ZCP/datatables/LjDduW6kh8iik4o7"
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "26065fb3-0474-4917-b1d6-389e4b210768",
+      "name": "Get row(s)"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "sum",
+              "field": "monto_sum"
+            },
+            {
+              "field": "monto"
+            }
+          ]
+        },
+        "fieldsToSplitBy": "ruta",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        656,
+        0
+      ],
+      "id": "b682ad7c-e9a3-47fd-b96d-6febf28ca4f5",
+      "name": "Summarize"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e86934f4-690a-4684-8087-69be7d434634",
+              "name": "monto_sum",
+              "value": "={{ $json.monto.toNumber() }}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        448,
+        0
+      ],
+      "id": "c843e1a9-5c5a-4148-93f3-6d7a9673405c",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "sum",
+              "field": "sum_monto_sum"
+            },
+            {
+              "aggregation": "sum",
+              "field": "count_monto"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        864,
+        0
+      ],
+      "id": "9d05f376-efc6-4b65-8b27-d67f5c92d1e1",
+      "name": "Summarize1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "69737673-0fbe-4bc2-b253-3ab239bd8e3c",
+              "name": "monto_total_dia",
+              "value": "={{ $json.sum_sum_monto_sum }}",
+              "type": "string"
+            },
+            {
+              "id": "2deb44cf-5a03-4807-9059-4d910ad9e785",
+              "name": "solicitudes_totales",
+              "value": "={{ $json.sum_count_monto }}",
+              "type": "string"
+            },
+            {
+              "id": "04ced885-8051-4a7d-a3ae-84260d867be9",
+              "name": "solicitudes_aprobadas",
+              "value": "={{ $('Summarize').all().find(item => item.json.ruta === 'APROBACION')?.json.count_monto || 0 }}",
+              "type": "string"
+            },
+            {
+              "id": "2a79ba28-47b1-4fc6-a002-30d2138721b1",
+              "name": "tasa_aprobacion_pct",
+              "value": "={{ Math.round((($('Summarize').all().find(item => item.json.ruta === 'APROBACION')?.json.count_monto || 0) / $json.sum_count_monto) * 100) }}",
+              "type": "string"
+            },
+            {
+              "id": "c1e8dad7-cc46-419e-97c1-b4573d5edba4",
+              "name": "mensaje_resumen",
+              "value": "=Resumen del día: {{ $json.sum_count_monto }} solicitudes procesadas, monto total ${{ $json.sum_sum_monto_sum }}, tasa de aprobación {{ Math.round((($('Summarize').all().find(item => item.json.ruta === 'APROBACION')?.json.count_monto || 0) / $json.sum_count_monto) * 100) }}%",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "f63c435f-eaaf-4fb7-ac51-f541d3cdc57c",
+      "name": "Edit Fields1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        []
+      ]
+    },
+    "Summarize": {
+      "main": [
+        [
+          {
+            "node": "Summarize1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "3c716e01-a6b2-4011-bae2-c2e8a4808b7e",
+  "meta": {
+    "instanceId": "4bd18b63f70faa8fbbb0a84166d79f65d0b64b05f06ecf963de3f7c4d4a627a7"
+  },
+  "nodeGroups": [],
+  "id": "3YepXJqBRO3shnLB",
+  "tags": []
+}
